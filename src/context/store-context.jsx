@@ -14,11 +14,11 @@ const defaultValues = {
   cart: [],
   isOpen: false,
   loading: false,
-  onOpen: () => {},
-  onClose: () => {},
-  addVariantToCart: () => {},
-  removeLineItem: () => {},
-  updateLineItem: () => {},
+  onOpen: () => { },
+  onClose: () => { },
+  addVariantToCart: () => { },
+  removeLineItem: () => { },
+  updateLineItem: () => { },
   client,
   checkout: {
     lineItems: [],
@@ -34,6 +34,7 @@ export const StoreProvider = ({ children }) => {
   const [checkout, setCheckout] = React.useState(defaultValues.checkout)
   const [loading, setLoading] = React.useState(false)
   const [didJustAddToCart, setDidJustAddToCart] = React.useState(false)
+  const addToCartTimerRef = React.useRef(null);
 
   const setCheckoutItem = (checkout) => {
     if (isBrowser) {
@@ -82,13 +83,18 @@ export const StoreProvider = ({ children }) => {
       },
     ]
 
+    if (addToCartTimerRef.current) {
+      clearTimeout(addToCartTimerRef.current)
+    }
+
     return client.checkout
       .addLineItems(checkoutID, lineItemsToUpdate)
       .then((res) => {
         setCheckout(res)
         setLoading(false)
         setDidJustAddToCart(true)
-        setTimeout(() => setDidJustAddToCart(false), 3000)
+
+        addToCartTimerRef.current = setTimeout(() => setDidJustAddToCart(false), 3000)
       })
   }
 
@@ -105,16 +111,23 @@ export const StoreProvider = ({ children }) => {
 
   const updateLineItem = (checkoutID, lineItemID, quantity) => {
     setLoading(true)
+    setDidJustAddToCart(true)
 
     const lineItemsToUpdate = [
       { id: lineItemID, quantity: parseInt(quantity, 10) },
     ]
+
+    if (addToCartTimerRef.current) {
+      clearTimeout(addToCartTimerRef.current)
+    }
 
     return client.checkout
       .updateLineItems(checkoutID, lineItemsToUpdate)
       .then((res) => {
         setCheckout(res)
         setLoading(false)
+
+        addToCartTimerRef.current = setTimeout(() => setDidJustAddToCart(false), 3000)
       })
   }
 

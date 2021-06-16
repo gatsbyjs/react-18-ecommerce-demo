@@ -1,7 +1,6 @@
 import * as React from "react"
 import { graphql } from "gatsby"
 import slugify from "@sindresorhus/slugify"
-import debounce from "debounce"
 import { CgChevronRight, CgChevronLeft } from "react-icons/cg"
 import { Layout } from "../components/layout"
 import CrossIcon from "../icons/cross"
@@ -266,12 +265,6 @@ function SearchPage({
 
 function SearchBar({ defaultTerm, setFilters }) {
   const [term, setTerm] = React.useState(defaultTerm)
-  const debouncedSetFilters = React.useCallback(
-    debounce((value) => {
-      setFilters((filters) => ({ ...filters, term: value }))
-    }, 200),
-    [setFilters]
-  )
 
   return (
     <form onSubmit={(e) => e.preventDefault()} className={searchForm}>
@@ -281,7 +274,11 @@ function SearchBar({ defaultTerm, setFilters }) {
         value={term}
         onChange={(e) => {
           setTerm(e.target.value)
-          debouncedSetFilters(e.target.value)
+
+          // Updating the filters is less important than updating the input field so we mark it as less urgent with startTransition
+          React.startTransition(() => {
+            setFilters((filters) => ({ ...filters, term: e.target.value }))
+          })
         }}
         placeholder="Search..."
       />

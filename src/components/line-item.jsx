@@ -1,5 +1,4 @@
 import * as React from "react"
-import debounce from "lodash.debounce"
 import { StoreContext } from "../context/store-context"
 import { formatPrice } from "../utils/format-price"
 import { GatsbyImage } from "gatsby-plugin-image"
@@ -41,21 +40,16 @@ export function LineItem({ item }) {
     removeLineItem(checkout.id, item.id)
   }
 
-  const uli = debounce(
-    (value) => updateLineItem(checkout.id, item.id, value),
-    300
-  )
-  // eslint-disable-next-line
-  const debouncedUli = React.useCallback((value) => uli(value), [])
-
   const handleQuantityChange = (value) => {
     if (value !== "" && Number(value) < 1) {
       return
     }
     setQuantity(value)
-    if (Number(value) >= 1) {
-      debouncedUli(value)
-    }
+    React.startTransition(() => {
+      if (Number(value) >= 1) {
+        updateLineItem(checkout.id, item.id, value)
+      }
+    })
   }
 
   function doIncrement() {
@@ -104,7 +98,6 @@ export function LineItem({ item }) {
       <td className={priceColumn}>{price}</td>
       <td>
         <NumericInput
-          disabled={loading}
           value={quantity}
           aria-label="Quantity"
           onIncrement={doIncrement}
